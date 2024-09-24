@@ -1,12 +1,21 @@
 import { IconMore as MR } from '@douyinfe/semi-icons';
-import { Avatar, Button, Space, Table, Tooltip } from '@douyinfe/semi-ui';
+import { Avatar, Button, Input, Modal, Space, Table, Tooltip } from '@douyinfe/semi-ui';
 import SC from '../../assets/收藏.svg'
 import FX from '../../assets/分享.svg'
 import LJ from '../../assets/链接.svg';
+import CMM from '../../assets/重命名.svg';
 import { useState } from 'react';
 import Icon from '@douyinfe/semi-icons-lab';
 import CustomDropdown from '../../Custom/CustomDropdown';
-const DATAROW = [
+interface DataSourceType {
+    key: number;
+    name: string;
+    nameIconSrc: string;
+    updateName: string;
+    size: string;
+    operate: boolean;
+}
+const DATAROW: DataSourceType[] = [
     {
         key: 0,
         name: 'Semi Design 设计稿.fig',
@@ -33,36 +42,48 @@ const DATAROW = [
     }
 ];
 
-
-function HoverTooltip() {
-    return <>
-        <CustomDropdown items={[
-            { label: "删除", icon: null, modalConfig: { title: '确认要删除本条数据吗', type: "warning" } }
-        ]} trigger='click'>
-            <Button>
-                <Icon svg={<MR />} size="extra-large" />
-            </Button>
-        </CustomDropdown>
-        <Tooltip content={"添加收藏"}> <Button>
-            <Icon svg={<SC />} size="extra-large" />
-        </Button></Tooltip>
-        <Tooltip content={"创建链接并分享"}> <Button>
-            <Icon svg={<FX />} size="extra-large" />
-        </Button></Tooltip>
-        <Tooltip content={"共享"}>
-            <Button>
-                <Icon svg={<LJ />} size="extra-large" />
-            </Button>
-        </Tooltip>
-    </>
-}
 export default function ContentTable() {
     const [data, setData] = useState(DATAROW)
+    const [name, setName] = useState("")
+    const [key, setKey] = useState<number>()
+    const [visible, setVisible] = useState(false)
+    const modalClick = (key: number, dname: string) => {
+        setVisible(true)
+        setName(dname)
+        setKey(key)
+    }
+
+    const delClick = (key: number) => {
+        const newDataSource = [...data];
+        if (key != null) {
+            const idx = newDataSource.findIndex(data => data.key === key);
+
+            if (idx > -1) {
+                newDataSource.splice(idx, 1);
+                setData(newDataSource);
+            }
+        }
+    }
+    // 修改data里面的name
+    const modifyData = () => {
+        console.log("key", key, "name", name);
+
+        const newDataSource = [...data];
+        if (key != null) {
+            const idx = newDataSource.findIndex(data => data.key === key);
+
+            if (idx > -1) {
+                newDataSource[key].name = name;
+                setData(newDataSource);
+            }
+        }
+        clearModal()
+    }
     const columns = [
         {
             title: '名称',
             dataIndex: 'name',
-            render: (text: string, record: { [key: string]: string }) => {
+            render: (text: string, record: DataSourceType) => {
                 return (
                     <div>
                         <Avatar
@@ -71,7 +92,7 @@ export default function ContentTable() {
                             src={record.nameIconSrc}
                             style={{ marginRight: 12 }}
                         ></Avatar>
-                        {text}
+                        {text} {!record.operate ? <Icon onClick={() => modalClick(record.key, text)} svg={<CMM />} size="extra-large" /> : ''}
                     </div>
                 );
             },
@@ -82,9 +103,26 @@ export default function ContentTable() {
         }, {
             title: '大小',
             dataIndex: 'size',
-            render: (text: string, record: { [key: string]: string }) => {
+            render: (text: string, record: DataSourceType) => {
                 return record.operate ? text : <Space spacing={15}>
-                    <HoverTooltip />
+                    <CustomDropdown items={[
+                        { label: "删除", icon: null, modalConfig: { title: '确认要删除本条数据吗', type: "warning", onOk: () => delClick(record.key) } }
+                    ]} trigger='click'>
+                        <Button>
+                            <Icon svg={<MR />} size="extra-large" />
+                        </Button>
+                    </CustomDropdown>
+                    <Tooltip content={"添加收藏"}> <Button>
+                        <Icon svg={<SC />} size="extra-large" />
+                    </Button></Tooltip>
+                    <Tooltip content={"创建链接并分享"}> <Button>
+                        <Icon svg={<FX />} size="extra-large" />
+                    </Button></Tooltip>
+                    <Tooltip content={"共享"}>
+                        <Button>
+                            <Icon svg={<LJ />} size="extra-large" />
+                        </Button>
+                    </Tooltip>
                 </Space>;
             },
         },
@@ -126,8 +164,23 @@ export default function ContentTable() {
             // 其他可以作用于 tr 的属性或事件
         };
     }
+    const clearModal = () => {
+        setVisible(false)
+        setName("")
+        setKey(-1)
+    }
 
     return (
-        <Table dataSource={data} columns={columns} onRow={onRow} rowSelection pagination={false} sticky />
+        <>
+            <Table dataSource={data} columns={columns} onRow={onRow} rowSelection pagination={false} sticky />
+            <Modal title="输入新名称"
+                visible={visible}
+                onOk={modifyData}
+                onCancel={clearModal} >
+                <Input defaultValue={name} onChange={(value) => {
+                    setName(value);
+                }} />
+            </Modal>
+        </>
     )
 }

@@ -1,0 +1,20 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+.header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.h-screen {
+    height: 100vh;
+}
+
+.m-1 {
+    margin-left: 1rem;
+    margin-right: 1rem
+}
